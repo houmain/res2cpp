@@ -145,6 +145,7 @@ int main() {
 
     [ = config3/sub]
     config3::a::id2 = res2.txt
+    config3::b::id2 = res2.txt # deduplicated
   )";
   const auto asset_h = R"(
     #pragma once
@@ -183,6 +184,8 @@ int main() {
   // config3
   assert(res1 == config3::a::id1.to_string());
   assert(res2 == config3::a::id2.to_string());
+  assert(config3::a::id2.data == config3::b::id2.data &&
+         config3::a::id2.size == config3::b::id2.size);
 
   std::cout << "All tests succeeded!" << std::endl;
 }

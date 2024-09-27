@@ -8,6 +8,7 @@
 #include <optional>
 #include <algorithm>
 #include <cstring>
+#include <map>
 
 void print_help_message() {
   std::cout <<
@@ -479,6 +480,7 @@ void generate_output(std::ostream& os, const Settings& settings,
   auto current_namespace = std::vector<std::string_view>();
   auto resource_type_parts = std::vector<std::string_view>();
   auto resource_type = std::string_view();
+  auto resource_by_path = std::map<std::filesystem::path, std::string_view>();
 
   // depending on current namespace make resource_type point
   // to fully qualified type name or last part only
@@ -533,6 +535,10 @@ void generate_output(std::ostream& os, const Settings& settings,
     os << "const " << resource_type << " " << name
       << "{ reinterpret_cast<const " + settings.data_type + "*>("
       << name << "_data_), " << data_size << " };\n";
+  };
+  const auto write_duplicate = [&](std::string_view name, std::string_view first) {
+    write_indent();
+    os << "const " << resource_type << " " << name << " = " << first << ";\n";
   };
 
   if (is_header)
@@ -594,10 +600,17 @@ void generate_output(std::ostream& os, const Settings& settings,
     for_each_identifier(id, [&](std::string_view ident, bool last) {
       if (last) {
         close_namespaces(level);
-        if (is_header)
+        if (is_header) {
           write_header(ident);
-        else
+        }
+        else if (const auto it = resource_by_path.find(path); 
+                 it != resource_by_path.end()) {
+          write_duplicate(ident, replace_all(std::string(it->second), "/", "::"));
+        }
+        else {
           write_output(ident, path);
+          resource_by_path[path] = id;
+        }
       }
       else if (level >= current_namespace.size() ||
                current_namespace[level] != ident) {
