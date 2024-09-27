@@ -341,7 +341,9 @@ std::optional<Definition> parse_definition(const std::string& line) {
     if (it != end && *it != '#')
       error("invalid definition");
   }
-
+  else if (definition.id.empty()) {
+    error("missing id");
+  }
   return definition;
 }
 

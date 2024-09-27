@@ -47,8 +47,6 @@ void test_parse_definition() {
   assert(check("[ ' a ' ]", "a", " a ", true));
   assert(check("a=# x", "a", "", false));
   assert(check(" a= ", "a", "", false));
-  assert(check("=b# x", "", "b", false));
-  assert(check("= b", "", "b", false));
   assert(check("[ = 'b#']", "", "b#", true));
   assert(check("[ = ' b]']", "", " b]", true));
   assert(check("a=b", "a", "b", false));
@@ -69,6 +67,7 @@ void test_parse_definition() {
   assert(check_throws(" 'a' a =  b "));
   assert(check_throws(" a =  ' b ' b "));
   // invalid identifier
+  assert(check_throws(" = b "));
   assert(check_throws(" a a = b "));
   assert(check_throws(" a/ = b "));
   assert(check_throws(" /a = b "));
