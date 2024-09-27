@@ -52,6 +52,7 @@ void test_parse_definition() {
   assert(check("a=b", "a", "b", false));
   assert(check(" a = b c # x", "a", "b c", false));
   assert(check(" a = ' b c [' # x", "a", " b c [", false));
+  assert(check(" _1 = b", "_1", "b", false));
 
   assert(check_throws("["));
   assert(check_throws("]"));
@@ -76,6 +77,8 @@ void test_parse_definition() {
   assert(check_throws(" a: = b "));
   assert(check_throws(" a:b = b "));
   assert(check_throws(" a:: = b "));
+  assert(check_throws(" ? = b "));
+  assert(check_throws(" 1 = b "));
 
   // normalize path / deducing id from path
   assert(check("a/b.txt", "a/b", "a/b.txt", false));
@@ -89,6 +92,8 @@ void test_parse_definition() {
   assert(check("[a/b.txt]", "a/b_txt", "a/b.txt", true));
   assert(check("[ a\\b.txt]", "a/b_txt", "a/b.txt", true));
   assert(check("[a\\b.txt ]", "a/b_txt", "a/b.txt", true));
+  assert(check("1/2.txt", "_1/_2", "1/2.txt", false));
+  assert(check("[1/2]", "_1/_2", "1/2", true));
 
   // normalize id
   assert(check("a::b = c", "a/b", "c", false));

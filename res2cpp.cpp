@@ -19,11 +19,11 @@ void print_help_message() {
     "  -s, --source <file>  sets the path of the source file.\n"
     "  -h, --header <file>  sets the path of the header file.\n"
   //"  -e, --embed          use #embed for embedding files.\n"
-    "  -n, --native         reduce overhead by optimizing for native endianness.\n"
     "  -d, --data <type>    use type for data (e.g. uint8_t, std::byte, void)\n"
     "  -t, --type <type>    use type for resource (e.g. std::span<const uint8_t>).\n"
     "  -a, --alias <type>   declare an alias for resource type.\n"
     "  -i, --include <file> add #include to generated header.\n"
+    "  -n, --native         optimize for native endianness to improve compile-time.\n"
     "\n"
     "All Rights Reserved.\n"
     "This program comes with absolutely no warranty.\n"
@@ -69,7 +69,11 @@ bool is_space(char c) {
 }
 
 bool is_alnum(char c) {
-  return (std::isalnum(static_cast<unsigned char>(c)) || c == '_');
+  return (std::isalnum(static_cast<unsigned char>(c)));
+}
+
+bool is_digit(char c) {
+  return (std::isdigit(static_cast<unsigned char>(c)));
 }
 
 std::filesystem::path utf8_to_path(std::string_view utf8_string) {
@@ -207,21 +211,42 @@ std::string normalize_path(std::string&& path) {
 }
 
 std::string normalize_id(std::string&& id) {
-  id = replace_all(
+  return replace_all(
     replace_all(std::move(id), "/", "$"), "::", "/");
-  for (const auto& c : id)
-    if (!is_alnum(c) && c != '/')
-      error("invalid identifier");
-  if (!id.empty() && id.back() == '/')
-    error("invalid identifier");
-  return id;
+}
+
+bool is_valid_identifier(std::string_view id) {
+  if (id.empty())
+    return false;
+
+  auto after_slash = true;
+  for (const auto& c : id) {
+    if (!is_alnum(c) && c != '_' && c != '/')
+      return false;
+    if (after_slash && is_digit(c))
+      return false;
+    after_slash = (c == '/');
+  }
+  if (id.back() == '/')
+    return false;
+  return true;
 }
 
 std::string deduce_id_from_path(bool is_header, const std::string& path) {
   auto id = trim(is_header ? path : remove_extension(path));
+
+  // replace not allowed characters
   for (auto& c : id)
     if (!is_alnum(c) && c != '/')
       c = '_';
+
+  // insert _ before initial digits
+  auto after_slash = true;
+  for (auto it = id.begin(); it != id.end(); ++it) {
+    if (after_slash && is_digit(*it))
+      it = id.insert(it, '_');
+    after_slash = (*it == '/');
+  }
   return id;
 }
 
@@ -307,6 +332,9 @@ std::optional<Definition> parse_definition(const std::string& line) {
   else if (skip_until('=')) {
     // first is no string
     definition.id = normalize_id(trim({ begin, it }));
+    if (!definition.id.empty() &&
+        !is_valid_identifier(definition.id))
+      error("invalid identifier");
     ++it;
     skip_space();
     begin = it;

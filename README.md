@@ -7,11 +7,11 @@ Usage: res2cpp [-options]
   -c, --config <file>  sets the path of the config file (required).
   -s, --source <file>  sets the path of the source file.
   -h, --header <file>  sets the path of the header file.
-  -n, --native         reduce overhead by optimizing for native endianness.
   -d, --data <type>    use type for data (e.g. uint8_t, std::byte, void)
   -t, --type <type>    use type for resource (e.g. std::span<const uint8_t>).
   -a, --alias <type>   declare an alias for resource type.
   -i, --include <file> add #include to generated header.
+  -n, --native         optimize for native endianness to improve compile-time.  
 ```
 
 ## Building
