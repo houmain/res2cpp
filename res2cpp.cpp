@@ -247,6 +247,18 @@ std::string deduce_id_from_path(bool is_header, const std::string& path) {
       it = id.insert(it, '_');
     after_slash = (*it == '/');
   }
+
+  // collapse multiple consecutive underscores
+  auto after_underscore = false;
+  for (auto it = id.begin(); it != id.end(); ) {
+    if (*it == '_' && after_underscore) {
+      it = id.erase(it);
+    }
+    else {
+      after_underscore = (*it == '_');
+      ++it;
+    }
+  }
   return id;
 }
 

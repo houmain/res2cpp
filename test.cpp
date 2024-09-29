@@ -84,16 +84,17 @@ void test_parse_definition() {
   assert(check("a/b.txt", "a/b", "a/b.txt", false));
   assert(check(" a\\b.txt", "a/b", "a/b.txt", false));
   assert(check("a\\b.txt ", "a/b", "a/b.txt", false));
-  assert(check("a::b", "a__b", "a::b", false));
-  assert(check("::.txt", "__", "::.txt", false));
+  assert(check("a::b", "a_b", "a::b", false));
+  assert(check("::.txt", "_", "::.txt", false));
   assert(check("a::b = c/d", "a/b", "c/d", false));
   assert(check("C:\\a.txt", "C_/a", "C:/a.txt", false));
-  assert(check("../a.txt", "__/a", "../a.txt", false));
+  assert(check("../a.txt", "_/a", "../a.txt", false));
   assert(check("[a/b.txt]", "a/b_txt", "a/b.txt", true));
   assert(check("[ a\\b.txt]", "a/b_txt", "a/b.txt", true));
   assert(check("[a\\b.txt ]", "a/b_txt", "a/b.txt", true));
   assert(check("1/2.txt", "_1/_2", "1/2.txt", false));
   assert(check("[1/2]", "_1/_2", "1/2", true));
+  assert(check("a $b.ext", "a_b", "a $b.ext", false));
 
   // normalize id
   assert(check("a::b = c", "a/b", "c", false));
