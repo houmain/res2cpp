@@ -10,7 +10,7 @@ res2cpp
 
 `res2cpp` allows to embed the data of resource files in C++ source code. The generation of a header file containing a declaration for each embedded resource has the following advantages over [other](https://github.com/graphitemaster/incbin/) [popular](https://github.com/vector-of-bool/cmrc) [solutions](https://github.com/cyrilcode/embed-resource):
 
-- there are no filenames in binary.
+- there are no filenames in the binary.
 - there are no string lookups at runtime.
 - the compiler checks, that all required files are embedded.
 - the IDE can provide autocompletion and find all references of a resource.
@@ -121,7 +121,7 @@ id = "filename containing #.ext"
 
 ```
 Usage: res2cpp [-options]
-  -c, --config <file>  sets the path of the config file (required).
+  -c, --config <file>  sets the path of the config file (stdin when not set).
   -s, --source <file>  sets the path of the source file.
   -h, --header <file>  sets the path of the header file.
   -d, --data <type>    use type for data (e.g. uint8_t, std::byte, void)
@@ -133,7 +133,7 @@ Usage: res2cpp [-options]
 
 ### --config
 
-The path to the [configuration](#configuration) file is the only required parameter.
+The path to the [configuration](#configuration) file. When none is set, the configuration is read from `stdin`.
 
 ### --source and --header
 

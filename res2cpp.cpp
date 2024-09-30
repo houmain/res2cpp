@@ -12,10 +12,10 @@
 
 void print_help_message() {
   std::cout <<
-    "res2cpp (c) 2024 by Albert Kalchmair\n"
+    "res2cpp v1.0 (c) 2024 by Albert Kalchmair\n"
     "\n"
     "Usage: res2cpp [-options]\n"
-    "  -c, --config <file>  sets the path of the config file (required).\n"
+    "  -c, --config <file>  sets the path of the config file (stdin when not set).\n"
     "  -s, --source <file>  sets the path of the source file.\n"
     "  -h, --header <file>  sets the path of the header file.\n"
   //"  -e, --embed          use #embed for embedding files.\n"
@@ -190,12 +190,10 @@ bool interpret_commandline(Settings& settings, int argc, const char* argv[]) {
     }
   }
 
-  // config file path is required
-  if (settings.config_file.empty())
-    return false;
-
   // other paths can be deduced
   if (settings.source_file.empty()) {
+    if (settings.config_file.empty())
+      return false;
     settings.source_file = settings.config_file;
     settings.source_file.replace_extension("cpp");
   }
@@ -406,15 +404,12 @@ void apply_definition(State& state, const Definition& definition) {
   }
 }
 
-std::vector<Resource> read_config(const std::filesystem::path& config_file) {
-  auto is = std::ifstream(config_file);
-  if (!is.good())
-    error("opening configuration '" + path_to_utf8(config_file) + "' failed");
-
+std::vector<Resource> read_config(std::istream& is, 
+    const std::filesystem::path& base_path) {
   auto line_no = 0;
   try {
     auto state = State();
-    state.base_path = config_file.parent_path();
+    state.base_path = base_path;
 
     auto line = std::string{ };
     while (is.good()) {
@@ -698,7 +693,17 @@ int main(int argc, const char* argv[]) try {
     return 1;
   }
 
-  auto resources = read_config(settings.config_file);
+  auto resources = [&]() {
+    if (settings.config_file.empty())
+      return read_config(std::cin, std::filesystem::current_path());
+        
+    auto is = std::ifstream(settings.config_file);
+    if (!is.good())
+      error("opening configuration '" + 
+        path_to_utf8(settings.config_file) + "' failed");
+    return read_config(is, settings.config_file.parent_path());
+  }();
+
   std::sort(begin(resources), end(resources));
   auto it = std::adjacent_find(begin(resources), end(resources),
     [](const Resource& a, const Resource& b) { return a.id == b.id; });
