@@ -128,6 +128,7 @@ Usage: res2cpp [-options]
   -t, --type <type>    use type for resource (e.g. std::span<const uint8_t>).
   -a, --alias <type>   declare an alias for resource type.
   -i, --include <file> add #include to generated header.
+  -x, --xor <key>      encrypt the data using a simple XOR cipher.
   -n, --native         optimize for native endianness to improve compile-time.  
 ```
 
@@ -220,6 +221,20 @@ namespace resources {
   extern const Resource resource_0;
   extern const Resource resource_1;
 } // namespace resources
+```
+
+### --xor
+
+Applies a [simple XOR cipher](https://en.wikipedia.org/wiki/XOR_cipher) to the resource data, which can be decoded like this:
+```c++
+template<typename T>
+std::vector<T> xor_cipher(const T* data, size_t size, std::string_view key) {
+  std::vector<T> decoded(size, T{ });
+  if (!key.empty())
+    for (size_t i = 0; i < size; ++i)
+      decoded[i] = data[i] ^ static_cast<T>(key[i % key.size()]);
+  return decoded;
+}
 ```
 
 ### --native 

@@ -169,6 +169,17 @@ int main() {
   write_textfile("config3.conf", config3);
   write_textfile("Asset.h", asset_h);
   res2cpp("-n -d std::byte -t config3::Asset -i Asset.h -c config3.conf");
+
+  // config4
+  write_textfile("config4/res1.txt", res1);
+  write_textfile("config4/res2.txt", res2);
+  const auto config4 = R"(
+    [config4]
+    res1.txt
+    res2.txt
+  )";
+  write_textfile("config4.conf", config4);
+  res2cpp("-x sEcurepa55 -c config4.conf");
 }
 
 #else // !TEST_GENERATE
@@ -176,6 +187,16 @@ int main() {
 #include "config1.cpp"
 #include "config2/source/file.cpp"
 #include "config3.cpp"
+#include "config4.cpp"
+
+template<typename T>
+std::vector<T> xor_cipher(const T* data, size_t size, std::string_view key) {
+  std::vector<T> decoded(size, T{ });
+  if (!key.empty())
+    for (size_t i = 0; i < size; ++i)
+      decoded[i] = data[i] ^ static_cast<T>(key[i % key.size()]);
+  return decoded;
+}
 
 int main() {
   // config1
@@ -191,6 +212,15 @@ int main() {
   assert(res2 == config3::a::id2.to_string());
   assert(config3::a::id2.data == config3::b::id2.data &&
          config3::a::id2.size == config3::b::id2.size);
+
+  // config4
+  const auto key = std::string("sEcurepa55");
+  const auto res4_1 = xor_cipher(config4::res1.first, config4::res1.second, key);
+  const auto res4_2 = xor_cipher(config4::res2.first, config4::res2.second, key);
+  assert(res1 == std::string_view(
+    reinterpret_cast<const char*>(res4_1.data()), res4_1.size()));
+  assert(res2 == std::string_view(
+    reinterpret_cast<const char*>(res4_2.data()), res4_2.size()));
 
   std::cout << "All tests succeeded!" << std::endl;
 }

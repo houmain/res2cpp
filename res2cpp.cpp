@@ -23,6 +23,7 @@ void print_help_message() {
     "  -t, --type <type>    use type for resource (e.g. std::span<const uint8_t>).\n"
     "  -a, --alias <type>   declare an alias for resource type.\n"
     "  -i, --include <file> add #include to generated header.\n"
+    "  -x, --xor <key>      encrypt the data using a simple XOR cipher.\n"
     "  -n, --native         optimize for native endianness to improve compile-time.\n"
     "\n"
     "All Rights Reserved.\n"
@@ -40,6 +41,7 @@ struct Settings {
   std::string resource_type;
   std::string resource_alias;
   std::vector<std::string> includes;
+  std::string xor_key;
 };
 
 struct Definition {
@@ -184,6 +186,11 @@ bool interpret_commandline(Settings& settings, int argc, const char* argv[]) {
       if (++i >= argc)
         return false;
       settings.includes.push_back(argv[i]);
+    }
+    else if (argument == "-x" || argument == "--xor") {
+      if (++i >= argc)
+        return false;
+      settings.xor_key = argv[i];
     }
     else {
       return false;
@@ -460,7 +467,9 @@ bool update_textfile(const std::filesystem::path& filename,
 
 size_t hexdump_file(std::ostream& os,
     const std::filesystem::path& filename,
-    int word_size, bool little_endian) {
+    int word_size, bool little_endian, 
+    const std::string& xor_key) {
+
   const auto max_per_line = 100 / (2 * word_size + 3);
   auto file = std::ifstream(filename, std::ios::in | std::ios::binary);
   if (!file.good())
@@ -478,6 +487,11 @@ size_t hexdump_file(std::ostream& os,
         if (i % max_per_line == 0)
           os.put('\n');
       }
+
+      if (!xor_key.empty())
+        for (auto j = 0; j < word_size; ++j)
+          input[j] ^= xor_key[(total_size + j) % xor_key.size()];
+
       os.write("0x", 2);
       for (auto j = 0; j < word_size; ++j) {
         const auto hex = "0123456789ABCDEF";
@@ -564,7 +578,8 @@ void generate_output(std::ostream& os, const Settings& settings,
       << name << "_data_[] {\n";
     const auto data_size = hexdump_file(os, path,
       (settings.little_endian.has_value() ? 8 : 1),
-      settings.little_endian.value_or(true));
+      settings.little_endian.value_or(true),
+      settings.xor_key);
     os << "\n";
     write_indent();
     os << "};\n";
